@@ -1,0 +1,308 @@
+{% extends "base.html" %}
+{% block title %}{{ course.title }} - LMS{% endblock %}
+
+{% block content %}
+<!-- Course Header -->
+<div class="p-4 mb-4 bg-white rounded shadow-sm">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-warning text-dark fs-6">⭐ {{ course.average_rating }} / 5.0</span>
+                <span class="text-muted small">({{ reviews|length }} reviews)</span>
+            </div>
+            <h2>{{ course.title }}</h2>
+            <p class="text-muted mb-2">{{ course.description or 'No description provided.' }}</p>
+            <p class="small text-muted mb-0">Instructor: <strong>{{ course.instructor.username if course.instructor else 'N/A' }}</strong></p>
+        </div>
+        
+        <div>
+            {% if current_user.get('role') == 'STUDENT' %}
+                {% if is_enrolled %}
+                    <span class="badge bg-success fs-6 p-2">✓ Enrolled</span>
+                {% elif not prereqs_met %}
+                    <button class="btn btn-secondary" disabled title="Prerequisites not satisfied">🔒 Prerequisites Required</button>
+                {% else %}
+                    <form action="{{ url_for('course.web_enroll', course_id=course.id) }}" method="POST">
+                        <button class="btn btn-success btn-lg">Enroll in Course</button>
+                    </form>
+                {% endif %}
+            {% elif current_user.get('role') in ['INSTRUCTOR', 'ADMIN'] %}
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('quiz.create_quiz', course_id=course.id) }}" class="btn btn-outline-success btn-sm">+ Add Quiz</a>
+                    <form action="{{ url_for('course.web_delete_course', course_id=course.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this entire course? This action cannot be undone.');" class="d-inline">
+                        <button type="submit" class="btn btn-outline-danger btn-sm">🗑️ Delete Course</button>
+                    </form>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Prerequisites Notice -->
+    {% if course.prerequisites %}
+        <div class="mt-3 pt-3 border-top">
+            <h6 class="text-muted mb-2"><small class="fw-bold text-uppercase">Course Prerequisites:</small></h6>
+            <div class="d-flex flex-wrap gap-2">
+                {% for p in course.prerequisites %}
+                    {% if p in unmet_prereqs %}
+                        <span class="badge bg-danger p-2">⚠️ Incomplete: {{ p.title }} (100% Required)</span>
+                    {% else %}
+                        <span class="badge bg-success p-2">✓ Completed: {{ p.title }}</span>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Progress Bar (for Enrolled Students) -->
+    {% if is_enrolled %}
+        <div class="mt-4 pt-3 border-top">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="fw-bold small">Your Course Progress</span>
+                <span class="fw-bold text-primary">{{ enrollment.progress }}%</span>
+            </div>
+            <div class="progress" style="height: 12px;">
+                <div class="progress-bar bg-success progress-bar-striped" role="progressbar" style="width: {{ enrollment.progress }}%;" aria-valuenow="{{ enrollment.progress }}" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Certificate Banner if Issued -->
+    {% if certificate %}
+        <div class="alert alert-warning mt-3 mb-0 d-flex justify-content-between align-items-center">
+            <div>
+                <strong>🎓 Certificate of Completion Earned!</strong>
+                <div class="small">Credential ID: <code>{{ certificate.certificate_code }}</code></div>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('certificate.view_certificate', cert_id=certificate.id) }}" class="btn btn-warning btn-sm">View Certificate</a>
+                <a href="{{ url_for('certificate.verify_certificate', cert_code=certificate.certificate_code) }}" class="btn btn-outline-dark btn-sm" target="_blank">Verify Online</a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<div class="row">
+    <!-- Main Content: Modules & Lessons -->
+    <div class="col-md-8">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Course Modules & Lessons</h5>
+                <span class="badge bg-primary">{{ course.modules|length }} Modules</span>
+            </div>
+            <div class="card-body">
+                {% if course.modules %}
+                    {% for module in course.modules %}
+                    <div class="card mb-4 border shadow-none">
+                        <div class="card-header bg-light fw-bold d-flex justify-content-between align-items-center">
+                            <span>{{ module.title }}</span>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-secondary small">{{ module.lessons|length }} Lessons</span>
+                                {% if current_user.get('role') in ['INSTRUCTOR', 'ADMIN'] %}
+                                    <form action="{{ url_for('course.web_delete_module', course_id=course.id, module_id=module.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this module and all its lessons/files?');" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2">Delete Module</button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <!-- Lessons list -->
+                            <h6 class="fw-bold mb-2">Lessons:</h6>
+                            {% if module.lessons %}
+                                <div class="list-group mb-3">
+                                    {% for lesson in module.lessons %}
+                                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div class="me-3">
+                                            <div class="fw-bold">
+                                                {% if lesson.id in completed_lesson_ids %}
+                                                    <span class="text-success me-1">✓</span>
+                                                {% else %}
+                                                    <span class="text-muted me-1">○</span>
+                                                {% endif %}
+                                                {{ lesson.title }}
+                                            </div>
+                                            {% if lesson.content %}
+                                                <p class="mb-0 text-muted small mt-1">{{ lesson.content }}</p>
+                                            {% endif %}
+                                        </div>
+
+                                        {% if is_enrolled or current_user.get('role') in ['INSTRUCTOR', 'ADMIN'] %}
+                                            <form action="{{ url_for('course.web_toggle_lesson', course_id=course.id, lesson_id=lesson.id) }}" method="POST">
+                                                {% if lesson.id in completed_lesson_ids %}
+                                                    <button type="submit" class="btn btn-sm btn-outline-secondary text-nowrap">✓ Completed</button>
+                                                {% else %}
+                                                    <button type="submit" class="btn btn-sm btn-outline-success text-nowrap">Mark Complete</button>
+                                                {% endif %}
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <p class="text-muted small mb-3">No lessons in this module yet.</p>
+                            {% endif %}
+
+                            <!-- Materials list -->
+                            <h6 class="fw-bold mb-2">Study Materials & Files:</h6>
+                            {% if module.materials %}
+                                <ul class="list-group list-group-flush mb-3">
+                                    {% for mat in module.materials %}
+                                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                        <span>📄 {{ mat.filename }} <span class="badge bg-light text-dark border">{{ mat.file_type }}</span></span>
+                                        <a href="{{ url_for('course.download_material', material_id=mat.id) }}" class="btn btn-outline-primary btn-sm">Download</a>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                <p class="text-muted small mb-2">No files attached.</p>
+                            {% endif %}
+
+                            <!-- Instructor module actions -->
+                            {% if current_user.get('role') in ['INSTRUCTOR', 'ADMIN'] %}
+                            <div class="border-top pt-3 mt-3 bg-light p-2 rounded">
+                                <div class="row g-2">
+                                    <!-- Add Lesson Form -->
+                                    <div class="col-md-6">
+                                        <form action="{{ url_for('course.web_add_lesson', course_id=course.id, module_id=module.id) }}" method="POST">
+                                            <label class="form-label small fw-bold mb-1">+ Add Lesson:</label>
+                                            <input type="text" name="title" class="form-control form-control-sm mb-1" placeholder="Lesson Title" required>
+                                            <textarea name="content" class="form-control form-control-sm mb-1" rows="1" placeholder="Lesson text / notes..."></textarea>
+                                            <button type="submit" class="btn btn-sm btn-outline-primary w-100">+ Add Lesson</button>
+                                        </form>
+                                    </div>
+                                    <!-- Upload File Form -->
+                                    <div class="col-md-6">
+                                        <form action="{{ url_for('course.upload_material', course_id=course.id, module_id=module.id) }}" method="POST" enctype="multipart/form-data">
+                                            <label class="form-label small fw-bold mb-1">📁 Upload Material:</label>
+                                            <input type="file" name="file" class="form-control form-control-sm mb-2" required>
+                                            <button type="submit" class="btn btn-sm btn-outline-secondary w-100">Upload File</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-4">
+                        <p class="text-muted mb-0">No modules available in this course yet.</p>
+                    </div>
+                {% endif %}
+
+                <!-- Add Module Form for Instructors -->
+                {% if current_user.get('role') in ['INSTRUCTOR', 'ADMIN'] %}
+                <div class="card border-dashed p-3 mt-3 bg-light">
+                    <h6 class="mb-2">+ Add New Module</h6>
+                    <form action="{{ url_for('course.web_add_module', course_id=course.id) }}" method="POST" class="d-flex gap-2">
+                        <input type="text" name="title" class="form-control form-control-sm" placeholder="Module Title (e.g. Module 2: Control Flow)" required>
+                        <button type="submit" class="btn btn-sm btn-primary text-nowrap">+ Add Module</button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Course Reviews & Ratings Section -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Reviews & Ratings</h5>
+                <span class="badge bg-warning text-dark">⭐ {{ course.average_rating }} / 5.0 ({{ reviews|length }})</span>
+            </div>
+            <div class="card-body">
+                <!-- Submit Review Form for Enrolled Students / Users -->
+                {% if is_enrolled or current_user.get('role') in ['STUDENT', 'INSTRUCTOR', 'ADMIN'] %}
+                <div class="card bg-light p-3 mb-4">
+                    <h6 class="mb-2">{% if user_review %}Edit Your Review{% else %}Leave a Review{% endif %}</h6>
+                    <form action="{{ url_for('course.web_submit_review', course_id=course.id) }}" method="POST">
+                        <div class="row g-2 mb-2 align-items-center">
+                            <div class="col-sm-4">
+                                <label class="form-label small fw-bold mb-0">Rating (1 to 5 Stars):</label>
+                                <select name="rating" class="form-select form-select-sm" required>
+                                    <option value="5" {% if user_review and user_review.rating == 5 %}selected{% endif %}>⭐⭐⭐⭐⭐ (5 - Excellent)</option>
+                                    <option value="4" {% if user_review and user_review.rating == 4 %}selected{% endif %}>⭐⭐⭐⭐ (4 - Very Good)</option>
+                                    <option value="3" {% if user_review and user_review.rating == 3 %}selected{% endif %}>⭐⭐⭐ (3 - Average)</option>
+                                    <option value="2" {% if user_review and user_review.rating == 2 %}selected{% endif %}>⭐⭐ (2 - Poor)</option>
+                                    <option value="1" {% if user_review and user_review.rating == 1 %}selected{% endif %}>⭐ (1 - Terrible)</option>
+                                </select>
+                            </div>
+                            <div class="col-sm-8">
+                                <label class="form-label small fw-bold mb-0">Feedback Comments:</label>
+                                <input type="text" name="comment" class="form-control form-control-sm" placeholder="Write your thoughts on the course..." value="{{ user_review.comment if user_review else '' }}">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-primary">Submit Review</button>
+                    </form>
+                </div>
+                {% endif %}
+
+                <!-- Existing Reviews List -->
+                {% if reviews %}
+                    <div class="list-group list-group-flush">
+                        {% for r in reviews %}
+                        <div class="list-group-item px-0 py-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <div>
+                                    <strong>{{ r.user.username }}</strong>
+                                    <span class="text-warning ms-1">
+                                        {% for _ in range(r.rating) %}★{% endfor %}{% for _ in range(5 - r.rating) %}☆{% endfor %}
+                                    </span>
+                                </div>
+                                <small class="text-muted">{{ r.created_at.strftime('%b %d, %Y') }}</small>
+                            </div>
+                            {% if r.comment %}
+                                <p class="mb-0 text-muted small">{{ r.comment }}</p>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted small mb-0">No reviews submitted yet. Be the first to review this course!</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar: Quizzes & Actions -->
+    <div class="col-md-4">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Quizzes & Tests</h5>
+                <span class="badge bg-info text-dark">{{ course.quizzes|length }}</span>
+            </div>
+            <div class="card-body">
+                {% if course.quizzes %}
+                    <div class="list-group">
+                        {% for quiz in course.quizzes %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-0">{{ quiz.title }}</h6>
+                                <small class="text-muted">{{ quiz.questions|length }} questions</small>
+                                {% if quiz_scores and quiz.id in quiz_scores and quiz_scores[quiz.id] > 0 %}
+                                    <span class="badge bg-success ms-2">Best Score: {{ "%.1f"|format(quiz_scores[quiz.id]) }}%</span>
+                                {% endif %}
+                            </div>
+                            <div class="d-flex gap-1 align-items-center">
+                                <a href="{{ url_for('quiz.attempt_quiz', quiz_id=quiz.id) }}" class="btn btn-sm btn-outline-success">Take Quiz</a>
+                                {% if current_user.get('role') in ['INSTRUCTOR', 'ADMIN'] %}
+                                    <form action="{{ url_for('quiz.delete_quiz', course_id=course.id, quiz_id=quiz.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete quiz \'{{ quiz.title }}\'?');" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger py-1 px-2" title="Delete Quiz">🗑️</button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted small mb-0">No quizzes available for this course yet.</p>
+                {% endif %}
+
+                {% if current_user.get('role') in ['INSTRUCTOR', 'ADMIN'] %}
+                <div class="mt-3">
+                    <a href="{{ url_for('quiz.create_quiz', course_id=course.id) }}" class="btn btn-sm btn-outline-primary w-100">+ Create Quiz</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

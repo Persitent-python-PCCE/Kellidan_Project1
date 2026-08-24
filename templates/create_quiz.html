@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Create Quiz - LMS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm p-4">
+            <h3 class="mb-3">Add Quiz to Course</h3>
+            <form action="{{ url_for('quiz.create_quiz', course_id=course_id) }}" method="POST">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Quiz Title</label>
+                    <input type="text" name="title" class="form-control" placeholder="e.g. Chapter 1 Assessment" required>
+                </div>
+                
+                <h5 class="mt-4 mb-3">Add First Question (Optional)</h5>
+                <div class="mb-3">
+                    <label class="form-label">Question Text</label>
+                    <textarea name="question_text" class="form-control" rows="2" placeholder="e.g. What is the output of print(2 ** 3)?"></textarea>
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Option A</label>
+                        <input type="text" name="option_a" class="form-control" placeholder="Option A">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Option B</label>
+                        <input type="text" name="option_b" class="form-control" placeholder="Option B">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Option C</label>
+                        <input type="text" name="option_c" class="form-control" placeholder="Option C">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Option D</label>
+                        <input type="text" name="option_d" class="form-control" placeholder="Option D">
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Correct Option</label>
+                    <select name="correct_option" class="form-select">
+                        <option value="A">A</option>
+                        <option value="B">B</option>
+                        <option value="C">C</option>
+                        <option value="D">D</option>
+                    </select>
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <a href="{{ url_for('course.web_course_details', course_id=course_id) }}" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-success">Save Quiz</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Security & Operations Audit Logs - Admin{% endblock %}
+
+{% block content %}
+<div class="p-4 mb-4 bg-white rounded shadow-sm d-flex justify-content-between align-items-center">
+    <div>
+        <h2>Security & Operations Audit Logs</h2>
+        <p class="text-muted mb-0">Complete audit trail of system events, authentication, enrollments, and actions.</p>
+    </div>
+    <div>
+        <a href="{{ url_for('admin.admin_dashboard') }}" class="btn btn-outline-secondary">← Back to Dashboard</a>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Recent Activity Logs</h5>
+        <span class="badge bg-secondary">{{ logs|length }} Entries</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover table-striped mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Timestamp (UTC)</th>
+                        <th>Action</th>
+                        <th>User</th>
+                        <th>IP Address</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if logs %}
+                        {% for log in logs %}
+                        <tr>
+                            <td class="text-nowrap small">{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            <td>
+                                <span class="badge 
+                                    {% if 'LOGIN_SUCCESS' in log.action %}bg-success
+                                    {% elif 'FAILED' in log.action %}bg-danger
+                                    {% elif 'LOGOUT' in log.action %}bg-secondary
+                                    {% elif 'CERTIFICATE' in log.action %}bg-warning text-dark
+                                    {% elif 'CREATE' in log.action or 'ENROLL' in log.action %}bg-primary
+                                    {% else %}bg-info text-dark{% endif %}">
+                                    {{ log.action }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if log.user %}
+                                    <strong>{{ log.user.username }}</strong> <span class="badge bg-light text-dark border">{{ log.user.role }}</span>
+                                {% else %}
+                                    <span class="text-muted">Anonymous</span>
+                                {% endif %}
+                            </td>
+                            <td class="font-monospace small">{{ log.ip_address or '—' }}</td>
+                            <td class="small">{{ log.details or '—' }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-4 text-muted">No audit logs recorded yet.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

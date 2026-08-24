@@ -1,0 +1,19 @@
+# Environment Variables
+.env
+
+# Python Compiled Files
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache
+
+# Virtual Environments
+venv/
+
+# Flask Instance Folder
+instance/
+
+# IDE & Editor Files
+.vscode/
+.idea/
+*.swp

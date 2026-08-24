@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>My Assessment History</h2>
+<table class="table table-bordered mt-3">
+    <thead>
+        <tr>
+            <th>Quiz Title / ID</th>
+            <th>Highest Score (%)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for r in results %}
+        <tr>
+            <td>{% if r.quiz %}{{ r.quiz.title }} (Quiz #{{ r.quiz_id }}){% else %}Quiz #{{ r.quiz_id }}{% endif %}</td>
+            <td>{{ r.score }}%</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

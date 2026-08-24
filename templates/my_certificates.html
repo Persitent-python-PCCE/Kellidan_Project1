@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}My Certificates - Flask LMS{% endblock %}
+
+{% block content %}
+<div class="p-4 mb-4 bg-white rounded shadow-sm">
+    <h2>My Earned Certificates</h2>
+    <p class="text-muted mb-0">View, download, and verify your credentials earned across all courses.</p>
+</div>
+
+<div class="row">
+    {% if certificates %}
+        {% for cert in certificates %}
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="badge bg-warning text-dark">Verified Credential</span>
+                        <small class="text-muted">{{ cert.issued_at.strftime('%b %d, %Y') }}</small>
+                    </div>
+                    <h5 class="card-title">{{ cert.course.title }}</h5>
+                    <p class="text-muted small mb-3">Credential ID: <code>{{ cert.certificate_code }}</code></p>
+                    <div class="d-flex gap-2">
+                        <a href="{{ url_for('certificate.view_certificate', cert_id=cert.id) }}" class="btn btn-primary btn-sm">View Certificate</a>
+                        <a href="{{ url_for('certificate.verify_certificate', cert_code=cert.certificate_code) }}" class="btn btn-outline-secondary btn-sm" target="_blank">Verify Link</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12">
+            <div class="card text-center p-5 shadow-sm">
+                <div class="text-muted mb-3" style="font-size: 3rem;">🎓</div>
+                <h4>No Certificates Yet</h4>
+                <p class="text-muted">Complete 100% of your course lessons and quizzes to automatically unlock certificates.</p>
+                <div class="mt-2">
+                    <a href="{{ url_for('course.web_list_courses') }}" class="btn btn-primary btn-sm">Browse Courses</a>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

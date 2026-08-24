@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificate of Completion - {{ cert.course.title }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Playfair+Display:ital,wght@0,600;1,400&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f0f2f5;
+            font-family: 'Inter', sans-serif;
+        }
+        .cert-container {
+            max-width: 900px;
+            margin: 40px auto;
+            background: #ffffff;
+            border: 12px solid #1a2a3a;
+            outline: 3px dashed #d4af37;
+            outline-offset: -8px;
+            padding: 50px 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            position: relative;
+            background-image: radial-gradient(circle, rgba(212, 175, 55, 0.04) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        .cert-title {
+            font-family: 'Cinzel', serif;
+            font-size: 2.6rem;
+            letter-spacing: 2px;
+            color: #1a2a3a;
+            text-transform: uppercase;
+        }
+        .cert-subtitle {
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            font-size: 1.2rem;
+            color: #666;
+        }
+        .cert-recipient {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.8rem;
+            color: #d4af37;
+            border-bottom: 2px solid #d4af37;
+            display: inline-block;
+            padding: 0 40px 10px 40px;
+            margin: 20px 0;
+        }
+        .cert-course {
+            font-family: 'Cinzel', serif;
+            font-size: 1.8rem;
+            color: #1a2a3a;
+            font-weight: 700;
+        }
+        .cert-code {
+            font-family: monospace;
+            background: #f8f9fa;
+            padding: 6px 12px;
+            border-radius: 4px;
+            border: 1px solid #dee2e6;
+            letter-spacing: 1.5px;
+        }
+        .seal-badge {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #f39c12, #d4af37);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            text-transform: uppercase;
+        }
+        @media print {
+            body { background: white; }
+            .no-print { display: none !important; }
+            .cert-container { margin: 0; box-shadow: none; border: 10px solid #1a2a3a; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container text-center my-3 no-print">
+        <a href="{{ url_for('certificate.list_my_certificates') }}" class="btn btn-outline-secondary me-2">← Back to My Certificates</a>
+        <button onclick="window.print()" class="btn btn-primary">🖨️ Print / Save as PDF</button>
+        <a href="{{ url_for('certificate.verify_certificate', cert_code=cert.certificate_code) }}" class="btn btn-outline-success ms-2">Verify Credential Online</a>
+    </div>
+
+    <div class="cert-container text-center">
+        <div class="mb-3">
+            <span class="badge bg-dark px-3 py-2 text-uppercase" style="letter-spacing: 2px;">Flask LMS Credential</span>
+        </div>
+        <h1 class="cert-title mb-1">Certificate of Completion</h1>
+        <p class="cert-subtitle">This is proudly and officially awarded to</p>
+
+        <div>
+            <div class="cert-recipient">{{ cert.user.username }}</div>
+        </div>
+
+        <p class="text-muted mt-2 mb-1">for successfully mastering all modules, lessons, and assessments in</p>
+        <h3 class="cert-course my-3">{{ cert.course.title }}</h3>
+
+        <p class="text-muted mb-4 small" style="max-width: 600px; margin: 0 auto;">
+            Demonstrating proficiency, dedication, and complete fulfillment of the curriculum requirements.
+        </p>
+
+        <hr class="my-4" style="border-top: 1px solid rgba(0,0,0,0.1);">
+
+        <div class="row align-items-center justify-content-between text-start mt-4 px-3">
+            <div class="col-sm-4 text-center text-sm-start">
+                <div class="text-muted small">Date of Issuance</div>
+                <div class="fw-bold">{{ cert.issued_at.strftime('%B %d, %Y') }}</div>
+            </div>
+            <div class="col-sm-4 text-center my-3 my-sm-0">
+                <div class="seal-badge mx-auto">
+                    VERIFIED<br>OFFICIAL
+                </div>
+            </div>
+            <div class="col-sm-4 text-center text-sm-end">
+                <div class="text-muted small">Credential ID</div>
+                <div class="cert-code d-inline-block mt-1">{{ cert.certificate_code }}</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
