@@ -38,13 +38,13 @@ pipeline {
             steps {
                 withCredentials([usernamePassword(
                     credentialsId: 'docker-creds', 
-                    usernameVariable: 'DOCKER-USER',
-                    passwordVariable: 'DOCKER-PASS')]) 
-                    {
-                        sh ''' 
-                        echo $DOCKER-PASS | docker login -u $DOCKER-USER --password-stdin 
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh ''' 
+                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
                         docker push kellidan/flask-app:latest
-                        '''
+                    '''
                 }
             }
         }
