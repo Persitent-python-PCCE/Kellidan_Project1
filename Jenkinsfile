@@ -30,7 +30,7 @@ pipeline {
 
         stage('build docker image') {
             steps {
-                sh 'docker build -t kellidan/flask-app:latest'
+                sh 'docker build -t kellidan/flask-app:latest .'
             }
         }
 
