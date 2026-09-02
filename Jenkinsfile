@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    triggers{
+        githubPush()
+    }
+
     stages {
         stage('checkout') {
             steps {
@@ -45,6 +49,33 @@ pipeline {
                         echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
                         docker push kellidan/flask-app:latest
                     '''
+                }
+            }
+        }
+    }
+    post{
+        success{
+            emailtext{
+                subject:"Success $(env.JOB_NAME) [#${env.BUILD_NUMBER}]"
+                body: """
+                    <h2> Jenkins build successful</h2>
+                    <p>
+                        <b>URL</B>: $(env.BUILD_URL)
+                    </p>
+                    """,
+                to: "kellidanfernandes57@gmail.com"
+                }
+            }
+        failure{
+            emailtext{
+                subject:"Failure $(env.JOB_NAME) [#${env.BUILD_NUMBER}]"
+                body: """
+                    <h2> Jenkins build failed</h2>
+                    <p>
+                        <b>URL</B>: $(env.BUILD_URL)
+                    </p>
+                    """,
+                to: "kellidanfernandes57@gmail.com"
                 }
             }
         }
