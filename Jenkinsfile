@@ -1,7 +1,7 @@
 pipeline {
     agent any
 
-    triggers{
+    triggers {
         githubPush()
     }
 
@@ -53,31 +53,33 @@ pipeline {
             }
         }
     }
-    post{
-        success{
-            emailtext{
-                subject:"Success $(env.JOB_NAME) [#${env.BUILD_NUMBER}]"
+
+    post {
+        success {
+            emailext (
+                subject: "Success ${env.JOB_NAME} [#${env.BUILD_NUMBER}]",
                 body: """
-                    <h2> Jenkins build successful</h2>
+                    <h2>Jenkins build successful</h2>
                     <p>
-                        <b>URL</B>: $(env.BUILD_URL)
+                        <b>URL</b>: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a>
                     </p>
-                    """,
-                to: "kellidanfernandes57@gmail.com"
-                }
-            }
-        failure{
-            emailtext{
-                subject:"Failure $(env.JOB_NAME) [#${env.BUILD_NUMBER}]"
+                """,
+                to: "kellidanfernandes57@gmail.com",
+                mimeType: 'text/html'
+            )
+        }
+        failure {
+            emailext (
+                subject: "Failure ${env.JOB_NAME} [#${env.BUILD_NUMBER}]",
                 body: """
-                    <h2> Jenkins build failed</h2>
+                    <h2>Jenkins build failed</h2>
                     <p>
-                        <b>URL</B>: $(env.BUILD_URL)
+                        <b>URL</b>: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a>
                     </p>
-                    """,
-                to: "kellidanfernandes57@gmail.com"
-                }
-            }
+                """,
+                to: "kellidanfernandes57@gmail.com",
+                mimeType: 'text/html'
+            )
         }
     }
 }
