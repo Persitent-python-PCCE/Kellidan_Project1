@@ -50,6 +50,13 @@ def create_app():
     app.register_blueprint(admin_bp)
     app.register_blueprint(certificate_bp)
 
+    @app.route("/health", methods=['GET'])
+    def health():
+        try:
+            return "Healthy", 200
+        except Exception:
+            return "Unhealthy", 500
+
     @app.route('/')
     def index():
         return redirect(url_for('auth.web_login'))
