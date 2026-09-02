@@ -17,12 +17,23 @@ import models.review
 import models.certificate
 import models.audit_log
 
-def create_app():
+def create_app(config_override=None):
     app = Flask(__name__)
     app.config['SECRET_KEY'] = 'dev-secret-key'
     app.config['JWT_SECRET_KEY'] = 'dev-jwt-secret-key-32-characters-long-minimum-secure'
     app.config['JWT_TOKEN_LOCATION'] = ['cookies', 'headers']
     app.config['JWT_COOKIE_CSRF_PROTECT'] = False
+    
+    # Set default Database URI from environment variable (with local fallback)
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
+        'MYSQL_DB_URL', 
+        'mysql+pymysql://root:root@mysql-service:3306/testdb'
+    )
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+    # Apply test or custom overrides BEFORE database initialization
+    if config_override:
+        app.config.update(config_override)
 
     init_db(app)
     jwt = JWTManager(app)
@@ -61,8 +72,10 @@ def create_app():
     def index():
         return redirect(url_for('auth.web_login'))
 
-    with app.app_context():
-        db.create_all()
+    # Avoid running table creation automatically during unit tests
+    if not app.config.get('TESTING'):
+        with app.app_context():
+            db.create_all()
 
     return app
 
