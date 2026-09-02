@@ -23,7 +23,7 @@ pipeline {
             steps {
                 sh '''
                 . venv/bin/activate
-                pytest
+                python -m pytest
                 '''
             }
         }
