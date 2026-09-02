@@ -17,3 +17,6 @@ instance/
 .vscode/
 .idea/
 *.swp
+
+*.yml
+*.yaml
