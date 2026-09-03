@@ -3,13 +3,13 @@ FROM python:3.12-slim
 # 1. Create a non-root user and set permissions
 RUN adduser --disabled-password --gecos "" appuser
 
-WORKDIR /app
+WORKDIR /app --only-binary :all:
 
 # 2. Copy dependencies first
 COPY requirements.txt .
 
 # 3. Install packages as binary-only wheels without executing source setup scripts
-RUN pip install --no-cache-dir --only-binary=:all: -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # 4. Copy application source code
 COPY . .
