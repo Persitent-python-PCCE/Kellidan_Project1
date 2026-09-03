@@ -3,7 +3,7 @@ FROM python:3.12-slim
 # 1. Create a non-root user and set permissions
 RUN adduser --disabled-password --gecos "" appuser
 
-WORKDIR /app --only-binary :all:
+WORKDIR /app
 
 # 2. Copy dependencies first
 COPY requirements.txt .

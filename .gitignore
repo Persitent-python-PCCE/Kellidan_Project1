@@ -13,10 +13,13 @@ venv/
 # Flask Instance Folder
 instance/
 
+# Runtime uploads
+uploads/
+
 # IDE & Editor Files
 .vscode/
 .idea/
 *.swp
 
-*.yml
-*.yaml
+# Secrets
+secret.yml

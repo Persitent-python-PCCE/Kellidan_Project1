@@ -17,3 +17,9 @@ instance/
 .vscode/
 .idea/
 *.swp
+
+# Kubernetes secrets
+secret.yml
+
+# Runtime uploads
+uploads/
