@@ -7,6 +7,7 @@ from controller.course_controller import course_bp
 from controller.quiz_controller import quiz_bp
 from controller.admin_controller import admin_bp
 from controller.certificate_controller import certificate_bp
+from prometheus_flask_exporter import PrometheusMetrics
 
 # Import models for db.create_all()
 import models.user
@@ -17,42 +18,29 @@ import models.review
 import models.certificate
 import models.audit_log
 
+# 1. Instantiate globally and attach static info
+metrics = PrometheusMetrics.for_app_factory()
+metrics.info('flask_app_info', 'Flask Application Information', version='1.0.0')
+
 def create_app(config_override=None):
     app = Flask(__name__)
+    
     app.config['SECRET_KEY'] = 'dev-secret-key'
     app.config['JWT_SECRET_KEY'] = 'dev-jwt-secret-key-32-characters-long-minimum-secure'
     app.config['JWT_TOKEN_LOCATION'] = ['cookies', 'headers']
     app.config['JWT_COOKIE_CSRF_PROTECT'] = False
     
-    # Set default Database URI from environment variable (with local fallback)
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
         'MYSQL_DB_URL', 
         'mysql+pymysql://root:root@mysql-service:3306/testdb'
     )
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-    # Apply test or custom overrides BEFORE database initialization
     if config_override:
         app.config.update(config_override)
 
     init_db(app)
     jwt = JWTManager(app)
-
-    # Handle missing JWT tokens gracefully for web browsers
-    @jwt.unauthorized_loader
-    def missing_token_callback(err_string):
-        if request.is_json or request.path.startswith("/api"):
-            return {"message": "Authorization token missing"}, 401
-        flash("Please log in first to access this page.", "warning")
-        return redirect(url_for('auth.web_login'))
-
-    # Handle expired or invalid JWT tokens
-    @jwt.invalid_token_loader
-    def invalid_token_callback(err_string):
-        if request.is_json or request.path.startswith("/api"):
-            return {"message": "Invalid token"}, 401
-        flash("Session expired or invalid token. Please log in again.", "warning")
-        return redirect(url_for('auth.web_login'))
 
     # Register Blueprints
     app.register_blueprint(auth_bp)
@@ -60,6 +48,20 @@ def create_app(config_override=None):
     app.register_blueprint(quiz_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(certificate_bp)
+
+    @jwt.unauthorized_loader
+    def missing_token_callback(err_string):
+        if request.is_json or request.path.startswith("/api"):
+            return {"message": "Authorization token missing"}, 401
+        flash("Please log in first to access this page.", "warning")
+        return redirect(url_for('auth.web_login'))
+
+    @jwt.invalid_token_loader
+    def invalid_token_callback(err_string):
+        if request.is_json or request.path.startswith("/api"):
+            return {"message": "Invalid token"}, 401
+        flash("Session expired or invalid token. Please log in again.", "warning")
+        return redirect(url_for('auth.web_login'))
 
     @app.route("/health", methods=['GET'])
     def health():
@@ -72,13 +74,16 @@ def create_app(config_override=None):
     def index():
         return redirect(url_for('auth.web_login'))
 
-    # Avoid running table creation automatically during unit tests
     if not app.config.get('TESTING'):
         with app.app_context():
             db.create_all()
+
+    # 2. Attach metrics to app
+    metrics.init_app(app)
 
     return app
 
 if __name__ == '__main__':
     app = create_app()
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    # 3. MUST be debug=False for prometheus exporter route to register properly
+    app.run(host='0.0.0.0', port=5000, debug=False)

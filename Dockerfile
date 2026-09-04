@@ -9,8 +9,8 @@ WORKDIR /app
 COPY requirements.txt .
 
 # 3. Install packages as binary-only wheels without executing source setup scripts
-RUN pip install --no-cache-dir --only-binary=:all: -r requirements.txt
-
+RUN pip install  -r requirements.txt
+# --no-cache-dir --only-binary=:all:
 # 4. Copy application source code
 COPY . .
 
